@@ -41,7 +41,10 @@ A powerful, lightweight **offline inventory and sales management desktop applica
 
 ## 🖼️ Screenshots
 
-> *\[Add screenshots or GIFs of your UI here – home screen, sales tab, reports, etc.]*
+<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/bd678d8a-8f12-4146-bdc0-001db2997f6d" />
+<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/a1e722f1-a692-4e67-a1ed-b312e315a7a8" />
+<img width="1202" height="732" alt="image" src="https://github.com/user-attachments/assets/f07f885e-8356-4593-bfaf-33f4c5238781" />
+
 
 ---
 
