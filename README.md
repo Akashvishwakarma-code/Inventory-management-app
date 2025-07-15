@@ -62,5 +62,4 @@ A powerful, lightweight **offline inventory and sales management desktop applica
 ---
 
 ## 🚀 Installation
-
-\`\`
+used pyinstaller .
