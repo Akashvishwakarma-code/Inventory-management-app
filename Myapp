@@ -1,0 +1,495 @@
+# customtkinter_oop_demo.py
+import customtkinter as ctk
+import sqlite3
+from tkinter import messagebox,ttk
+from tkinter import ttk
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from tkinter import filedialog
+import csv
+
+DATABASE_NAME="techyfile.db"
+
+
+
+ctk.set_appearance_mode("system")      # light/dark follows OS
+ctk.set_default_color_theme("blue")    # accent colour
+
+class Sidebar(ctk.CTkFrame):
+    """Vertical menu with page‑switch buttons."""
+    def __init__(self, parent, show_page_callback):
+        super().__init__(parent, fg_color=("gray14", "gray90"))
+        self.show_page = show_page_callback
+
+        ctk.CTkLabel(self, text=" MENU",
+                     font=("Roboto", 18, "bold")).pack(pady=(15, 10))
+
+        ctk.CTkButton(self, text="Home",
+                      command=lambda: self.show_page("Home")).pack(fill="x", padx=10, pady=5)
+        ctk.CTkButton(self, text="Form",
+                      command=lambda: self.show_page("Form")).pack(fill="x", padx=10, pady=5)
+        ctk.CTkButton(self,text="About", 
+                      command=lambda: self.show_page("About")).pack(fill="x",padx=10,pady=5)
+
+
+class HomePage(ctk.CTkFrame):
+    """Simple welcome page."""
+    def __init__(self, parent):
+        super().__init__(parent)
+        ctk.CTkLabel(self,
+                     text="Welcome, Akash!",
+                     font=("Roboto", 26, "bold")).pack(expand=True)
+class AboutPage(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        # Page Heading
+        heading = ctk.CTkLabel(self,
+            text="📘 About - TechyFile [All-in-One Inventory]",
+            font=("Roboto", 26, "bold"),
+            text_color="#1E90FF",  # Dodger blue
+            pady=20
+        )
+        heading.pack(anchor="center")
+
+        # Content box
+        content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        content_frame.pack(padx=40, pady=20, fill="both", expand=True)
+
+        about_text = (
+            "📦 Stationery Manager v1.0 (Trial)\n\n"
+            "👨‍💻 Developed by Akash Vishwakarma\n\n"
+            "🛠️  This app helps small shops manage inventory\n"
+            "and track sales using a simple barcode system.\n\n"
+            "🔒 Trial Version Includes:\n"
+            "• Inventory management\n"
+            "• Barcode-based sales\n"
+            "• Real-time stock update\n\n"
+            "📧 For support: techyfile@gmail.com"
+        )
+
+        about_label = ctk.CTkLabel(
+            content_frame,
+            text=about_text,
+            font=("Segoe UI", 26),
+            justify="left",
+            anchor="nw",
+            wraplength=600
+        )
+        about_label.pack(anchor="w", fill="both", expand=True)
+
+        
+
+        
+
+      
+
+class FormPage(ctk.CTkFrame):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        
+
+        # Heading
+        ctk.CTkLabel(self, text="📦 Inventory Manager", font=("Roboto", 24, "bold")).pack(pady=10)
+
+        button_frame = ctk.CTkFrame(self, fg_color="transparent")
+        button_frame.pack(fill="x", pady=5)
+
+        ctk.CTkLabel(button_frame,text="Product",font=("Times New Roman",15,"bold")).grid(row=0,column=0,padx=5,pady=5)
+        self.product_entry=ctk.CTkEntry(button_frame)
+        self.product_entry.grid(row=0,column=1,padx=5,pady=5)
+
+        ctk.CTkLabel(button_frame,text="Quantity",font=("Times New Roman",15,"bold")).grid(row=0,column=2,padx=5,pady=5)
+        self.quantity_entry=ctk.CTkEntry(button_frame)
+        self.quantity_entry.grid(row=0,column=3,padx=5,pady=5)
+
+        ctk.CTkLabel(button_frame,text="Price",font=("Times New Roman",15,"bold")).grid(row=0,column=4,padx=5,pady=5)
+        self.price_entry=ctk.CTkEntry(button_frame)
+        self.price_entry.grid(row=0,column=5,padx=5,pady=5)
+
+
+        ctk.CTkLabel(button_frame,text="Category",font=("Times New Roman",15,"bold")).grid(row=0,column=6,padx=5,pady=5)
+        self.Category_entry=ctk.CTkEntry(button_frame)
+        self.Category_entry.grid(row=0,column=7,padx=5,pady=5)
+
+        ctk.CTkLabel(button_frame,text="Barcode",font=("Times New Roman",15,"bold")).grid(row=0,column=8,padx=5,pady=5)
+        self.barcode_entry=ctk.CTkEntry(button_frame)
+        self.barcode_entry.grid(row=0,column=9,padx=5,pady=5)
+        
+
+
+
+
+
+        # Top: Search Bar
+        top_frame = ctk.CTkFrame(self, fg_color="transparent")
+        top_frame.pack(fill="x", pady=5)
+
+        self.search_var = ctk.StringVar()
+        ctk.CTkEntry(top_frame, placeholder_text="Search by product name or barcode", textvariable=self.search_var, width=590).pack(side="left", padx=(205,10))
+        ctk.CTkButton(top_frame, text="🔍 Search", command=self.search_product).pack(side="left")
+
+        # Middle: Action Buttons
+        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=5 ,padx=200)
+
+        ctk.CTkButton(btn_frame, text="➕ Add Product", command=self.add_product).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="✏️ Edit", command=self.edit_product).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="🗑️ Delete", command=self.delete_product).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="📁 Import CSV", command=self.import_csv).pack(side="left", padx=5)
+        ctk.CTkButton(btn_frame, text="💾 Export PDF", command=self.export_pdf).pack(side="left", padx=5)
+
+        # Product Table
+        table_frame = ctk.CTkFrame(self)
+        table_frame.pack(fill="both", expand=True, pady=(10, 5))
+
+        self.tree = ttk.Treeview(table_frame, columns=("ID", "Name", "Qty", "Price","Barcode"), show="headings")
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("Name", text="Product Name")
+        self.tree.heading("Qty", text="Quantity")
+        self.tree.heading("Price", text="Price")
+        self.tree.heading("Barcode",text="Barcode")
+        self.tree.pack(fill="both", expand=True)
+
+        # Bottom Status
+        status_frame = ctk.CTkFrame(self, fg_color="transparent")
+        status_frame.pack(fill="x", pady=5)
+
+        self.total_label = ctk.CTkLabel(status_frame, text="📦 Total Products: 0", font=("Arial", 14))
+        self.total_label.pack(side="left", padx=10)
+
+        self.low_stock_label = ctk.CTkLabel(status_frame, text="🔻 Low Stock: 0", font=("Arial", 14), text_color="red")
+        self.low_stock_label.pack(side="left")
+
+        self.load_all_products()
+
+    # Stub Methods (replace these with your logic)
+    def add_product(self):
+    # Validate empty fields
+        if not self.product_entry.get() or not self.quantity_entry.get() or not self.price_entry.get() or not self.Category_entry.get() or not self.barcode_entry.get():
+            messagebox.showwarning("Input Error", "Please fill in all required fields!")
+            return
+
+    # Validate number types
+        try:
+            self.qty_val = int(self.quantity_entry.get())
+            self.price_val = float(self.price_entry.get())
+        except ValueError:
+            messagebox.showwarning("Input Error", "Price and Quantity should be numbers")
+            return
+
+    # Insert into database
+        try:
+            with sqlite3.connect(DATABASE_NAME) as con:
+                con.execute(
+                    "INSERT INTO products(name, quantity, price, category, barcode) VALUES (?, ?, ?, ?, ?)",
+                    (
+                        self.product_entry.get(),
+                        self.qty_val,
+                        self.price_val,
+                        self.Category_entry.get(),
+                        self.barcode_entry.get()
+                    )
+                )
+                con.commit()
+                messagebox.showinfo("Success", "✅ Product added successfully!")
+
+            # Optional: Clear form entries
+                self.product_entry.delete(0, 'end')
+                self.quantity_entry.delete(0, 'end')
+                self.price_entry.delete(0, 'end')
+                self.Category_entry.delete(0, 'end')
+                self.barcode_entry.delete(0, 'end')
+
+                # Optional: Refresh Treeview
+                self.load_all_products()
+
+        except Exception as e:
+            messagebox.showerror("Execution Error", f"Error while adding to database:\n{e}")
+
+    def load_all_products(self):
+        # 1. Clear existing rows in the tree
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # 2. Fetch data from database
+        try:
+            with sqlite3.connect(DATABASE_NAME) as con:
+                rows = con.execute("SELECT id, name, quantity, price, barcode FROM products").fetchall()
+
+                # 3. Insert each row into the tree
+                for row in rows:
+                    self.tree.insert("", "end", values=row)
+
+                # 4. Update status labels
+                self.total_label.configure(text=f"📦 Total Products: {len(rows)}")
+
+                # Count low stock (optional: stock < 5)
+                low_stock = sum(1 for row in rows if row[2] < 5)
+                self.low_stock_label.configure(text=f"🔻 Low Stock: {low_stock}")
+
+        except Exception as e:
+            messagebox.showerror("Database Error", f"Could not load products:\n{e}")
+
+
+    def edit_product(self):
+        selected_item = self.tree.focus()
+        if not selected_item:
+            messagebox.showwarning("Edit Error", "Please select a product to edit.")
+            return
+
+        item = self.tree.item(selected_item)
+        values = item["values"]
+
+        self.editing_id = values[0]  # Save the ID for updating
+        self.product_entry.delete(0, 'end')
+        self.product_entry.insert(0, values[1])
+
+        self.quantity_entry.delete(0, 'end')
+        self.quantity_entry.insert(0, values[2])
+
+        self.price_entry.delete(0, 'end')
+        self.price_entry.insert(0, values[3])
+
+        self.barcode_entry.delete(0, 'end')
+        self.barcode_entry.insert(0, values[4])
+
+        # Fetch category from DB to populate (since not in tree)
+        try:
+            with sqlite3.connect(DATABASE_NAME) as con:
+                row = con.execute("SELECT category FROM products WHERE id = ?", (self.editing_id,)).fetchone()
+                if row:
+                    self.Category_entry.delete(0, 'end')
+                    self.Category_entry.insert(0, row[0])
+        except:
+            self.Category_entry.delete(0, 'end')
+
+        # Change Add button text to "Update"
+        for widget in self.winfo_children():
+            if isinstance(widget, ctk.CTkFrame):
+                for btn in widget.winfo_children():
+                    if isinstance(btn, ctk.CTkButton) and btn.cget("text") == "➕ Add Product":
+                        btn.configure(text="✅ Update", command=self.update_product)
+
+
+
+    def update_product(self):
+        if not hasattr(self, 'editing_id'):
+            messagebox.showwarning("Update Error", "No product selected to update.")
+            return
+
+        try:
+            name = self.product_entry.get().strip()
+            qty = int(self.quantity_entry.get())
+            price = float(self.price_entry.get())
+            category = self.Category_entry.get().strip()
+            barcode = self.barcode_entry.get().strip()
+
+            with sqlite3.connect(DATABASE_NAME) as con:
+                con.execute("""
+                    UPDATE products
+                    SET name = ?, quantity = ?, price = ?, category = ?, barcode = ?
+                    WHERE id = ?
+                """, (name, qty, price, category, barcode, self.editing_id))
+                con.commit()
+
+            messagebox.showinfo("Success", "✅ Product updated successfully!")
+            self.clear_form()
+            self.load_all_products()
+
+            # Change button back to Add mode
+            for widget in self.winfo_children():
+                if isinstance(widget, ctk.CTkFrame):
+                    for btn in widget.winfo_children():
+                        if isinstance(btn, ctk.CTkButton) and btn.cget("text") == "✅ Update":
+                            btn.configure(text="➕ Add Product", command=self.add_product)
+
+        except Exception as e:
+            messagebox.showerror("Update Error", f"Error updating product:\n{e}")
+
+
+    def delete_product(self):
+        selected_item = self.tree.focus()
+        if not selected_item:
+            messagebox.showwarning("Delete Error", "Please select a product to delete.")
+            return
+
+        confirm = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this product?")
+        if confirm:
+            try:
+                item_values = self.tree.item(selected_item)["values"]
+                product_id = item_values[0]
+                with sqlite3.connect(DATABASE_NAME) as con:
+                    con.execute("DELETE FROM products WHERE id = ?", (product_id,))
+                    con.commit()
+                self.tree.delete(selected_item)
+                self.load_all_products()
+                messagebox.showinfo("Deleted", "✅ Product deleted successfully.")
+            except Exception as e:
+                messagebox.showerror("Delete Error", f"Error while deleting product:\n{e}")
+
+
+    def search_product(self):
+        if self.tree.focus():
+            query = self.search_var.get().strip().lower()
+
+            # Clear the tree
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+
+            try:
+                with sqlite3.connect(DATABASE_NAME) as con:
+                    cursor = con.cursor()
+                    cursor.execute("SELECT id, name, quantity, price, barcode FROM products")
+                    rows = cursor.fetchall()
+
+                    filtered = [row for row in rows if query in row[1].lower() or query in str(row[4])]
+
+                    for row in filtered:
+                        self.tree.insert("", "end", values=row)
+
+                    # Update status
+                    self.total_label.configure(text=f"📦 Found: {len(filtered)}")
+                    low_stock = sum(1 for row in filtered if row[2] < 5)
+                    self.low_stock_label.configure(text=f"🔻 Low Stock: {low_stock}")
+
+            except Exception as e:
+                messagebox.showerror("Search Error", f"Couldn't search products:\n{e}")
+        else:
+            self.load_all_products()
+
+
+
+    def import_csv(self):
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv")],
+            title="Save CSV Template As"
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+
+                # Write headers
+                writer.writerow(["name", "quantity", "price", "category", "barcode"])
+
+                # Write example row (optional)
+                writer.writerow(["Ball Pen", 100, 10.5, "Stationery", "BP12345"])
+                writer.writerow(["Notebook", 50, 45.0, "Books", "NB001"])
+
+            messagebox.showinfo("Success", f"📄 CSV template saved successfully!\n\nLocation:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save CSV template:\n{e}")
+
+
+            
+    def export_pdf(self):
+        file_path = filedialog.asksaveasfilename(defaultextension=".pdf", filetypes=[("PDF files", "*.pdf")])
+        if not file_path:
+            return
+
+        try:
+            c = canvas.Canvas(file_path, pagesize=A4)
+            width, height = A4
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(200, height - 40, "📦 Inventory Report")
+
+            c.setFont("Helvetica", 10)
+            y = height - 70
+
+            headers = ["ID", "Name", "Qty", "Price", "Barcode"]
+            for i, h in enumerate(headers):
+                c.drawString(50 + i*100, y, h)
+
+            y -= 20
+
+            with sqlite3.connect(DATABASE_NAME) as con:
+                rows = con.execute("SELECT id, name, quantity, price, barcode FROM products").fetchall()
+                for row in rows:
+                    for i, value in enumerate(row):
+                        c.drawString(50 + i*100, y, str(value))
+                        y -= 20
+                        if y < 50:
+                            c.showPage()
+                            y = height - 70
+
+            c.save()
+            messagebox.showinfo("Success", "📤 PDF Exported successfully!")
+
+        except Exception as e:
+            messagebox.showerror("PDF Export Error", f"Error exporting to PDF:\n{e}")
+
+   
+
+    def clear_form(self):
+        self.product_entry.delete(0, 'end')
+        self.quantity_entry.delete(0, 'end')
+        self.price_entry.delete(0, 'end')
+        self.Category_entry.delete(0, 'end')
+        self.barcode_entry.delete(0, 'end')
+        self.editing_id = None
+
+
+
+class MainApp(ctk.CTk):
+    """Root window that manages pages."""
+    def __init__(self):
+        super().__init__()
+        self.init_db()
+
+        
+
+        self.title("CustomTkinter OOP Demo")
+        self.geometry("900x600")
+        self.minsize(700, 450)
+
+        # ----- SIDEBAR -----
+        self.sidebar = Sidebar(self, self.show_page)
+        self.sidebar.pack(side="left", fill="y")
+
+        # ----- PAGE CONTAINER -----
+        self.container = ctk.CTkFrame(self, fg_color="transparent")
+        self.container.pack(side="right", expand=True, fill="both")
+
+        # ----- PAGE OBJECTS (create once) -----
+        self.pages = {
+            "Home": HomePage(self.container),
+            "Form": FormPage(self.container),
+            "About": AboutPage(self.container)
+        }
+
+        self.show_page("Home")
+     
+
+    def show_page(self, page_name: str):
+        """Hide all pages, then show the requested one."""
+        for page in self.pages.values():
+            page.pack_forget()
+        page = self.pages[page_name]
+        page.pack(expand=True, fill="both")
+
+    def init_db(self):
+        with sqlite3.connect(DATABASE_NAME) as con:
+            con.execute(
+                """ 
+                CREATE TABLE IF NOT EXISTS products (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    quantity INTEGER NOT NULL,
+                    price REAL NOT NULL,
+                    category TEXT,
+                    barcode TEXT UNIQUE NOT NULL
+                )
+                """
+            )
+            con.commit()
+
+if __name__ == "__main__":
+
+    app = MainApp()
+    app.mainloop()
+
